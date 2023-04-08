@@ -11,6 +11,7 @@ import Music from '../pages/Music';
 import Notepad from '../pages/Notepad';
 import Profile from '../pages/Profile';
 import Games from '../pages/Games';
+import Teste from '../pages/testes';
 import ButtonNew from "../components/ButtonNew";
 
 const Stack = createNativeStackNavigator();
@@ -29,7 +30,7 @@ function StackNavigator() {
 
 function TabNavigator() {
   return (
-    <Tab.Navigator 
+    <Tab.Navigator initialRouteName="Home"
     screenOptions={{ 
       headerShown: false,
       tabBarStyle: {
@@ -98,7 +99,7 @@ function TabNavigator() {
 function HomeNavigation() {
   return (
     <Stack.Navigator>
-      <Stack.Screen name="Home" component={Home} />
+      <Stack.Screen name="HomeScreen" component={Home} />
     </Stack.Navigator>
   );
 }

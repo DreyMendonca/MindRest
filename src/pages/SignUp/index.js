@@ -1,106 +1,176 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, } from 'react-native';
 import * as Animatable from 'react-native-animatable' 
+import * as yup from 'yup';
+import { yupResolver } from '@hookform/resolvers/yup';
+import { auth, db} from '../../firebaseConnection';
+import { collection, addDoc } from 'firebase/firestore'
 import { createUserWithEmailAndPassword } from '@firebase/auth';
-import { auth } from '../../firebaseConnection';
 import { useNavigation } from '@react-navigation/native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
-//import DatePicker from 'react-native-datepicker';
+import { useForm, Controller } from 'react-hook-form'
+import Icon from 'react-native-vector-icons/FontAwesome';
+import { MaskedTextInput } from "react-native-mask-text";
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+
+const schema = yup.object({
+  name: yup.string().required("Informe seu nome"),
+  lastName: yup.string().required("Informe seu sobrenome"),
+  phone: yup.string().min(11, "O telefone deve conter 11 números!").required("Informe seu telefone"),
+  email: yup.string().email("Email Inválido!").required("Informe seu email"),
+  password: yup.string().min(6, "A senha deve ter pelo menos 6 dígitos!").required("Informe sua senha")
+})
 
 export default function SignUp() {
-  const [name, setName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [dateOfBirth, setDateOfBirth] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const {control, handleSubmit, formState: { errors } } = useForm({
+    resolver: yupResolver(schema)
+  })
+
   const navigation = useNavigation();
 
-  async function createUser(){
-    await createUserWithEmailAndPassword(auth, email, password)
-    .then(value => {
-      alert("Cadastro feito com sucesso!")
-      navigation.navigate('SignIn');
-    })
-    .catch(error => {
-      if(error.code === 'auth/weak-password'){
-        alert("Senha Fraca!\nSua senha deve conter pelo menos 6 caracteres.");
-        return;
-      }
-      if(error.code === 'auth/invalid-email'){
-        alert('Email Inválido')
-        return;
-      }else{
-        alert("Ops, algo deu errado!\nTente novamente.")
-      }
-    })
+  async function handleSignIn(data){
+    await createUserWithEmailAndPassword(auth, data.email, data.password)
+      .then(value => {
+        // Usuário criado com sucesso
+        alert('Cadastro feito com sucesso!');
+        navigation.navigate('SignIn');
+        const userDb = collection(db, 'Cadastro')
+        addDoc(userDb, {
+          name: data.name,
+          lastName: data.lastName,
+          phone: data.phone,
+          email: data.email,
+          password: data.password
+        })
+      })
+      .catch((error) => {
+        // Erro ao criar usuário
+        const errorCode = error.code;
+        const errorMessage = error.message;
+        console.log(errorCode, errorMessage);
+      });
   }
+  
 
   return (
     
     <View style={styles.container}>
       <View style={styles.containerHeader}>
       <Animatable.Image
-        source={require('../../assets/logo.png')}
+        source={require('../../assets/logoSignUp.png')}
         style={{width:'100%', height:'100%'}}
         resizeMod='contain'
         animation='fadeInDown'
       />
       </View>
       <KeyboardAwareScrollView style={styles.containerForm} contentContainerStyle={{alignItems:'center'}}>
-        <Text style={styles.title}>Cadastro</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Nome"
-          onChangeText={text => setName(text)}
-          value={name}
+        <Text style={styles.title}>Crie sua conta</Text>
+        <Text style={styles.subtitle}>Crie uma conta para que possa relaxar e descansar sua mente</Text>
+
+        <Controller
+          control={control}
+          name="name"
+          render={({ field: {onChange, onBlur, value} }) =>(
+            <View style={[styles.inputContainer, {borderWidth: errors.name && 1, borderColor: errors.name && '#ff375b'}]}>
+              <Icon name="user" size={hp('3%')} color="#ccc" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Nome"
+                onChangeText={onChange}
+                onBlur={onBlur}
+                value={value}
+              />
+            </View>
+          )}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Sobrenome"
-          onChangeText={text => setLastName(text)}
-          value={lastName}
+        {errors.name && <Text style={styles.labelError}>{errors.name?.message}</Text>}
+
+        <Controller
+          control={control}
+          name="lastName"
+          render={({ field: {onChange, onBlur, value} }) =>(
+            <View style={[styles.inputContainer, {borderWidth: errors.lastName && 1, borderColor: errors.lastName && '#ff375b'}]}>
+              <Icon name="id-card-o" size={hp('3%')} color="#ccc" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Sobrenome"
+                onChangeText={onChange}
+                onBlur={onBlur}
+                value={value}
+              />
+            </View>
+          )}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Data de Nascimento"
-          value={dateOfBirth}
-          type={'datetime'}
-          options={{
-            format: 'DD/MM/YYYY'
-          }}
-          onChangeText={text => {
-            setDateOfBirth({
-              date: text
-            })
-          }}
+        {errors.lastName && <Text style={styles.labelError}>{errors.lastName?.message}</Text>}
+
+        <Controller
+          control={control}
+          name="phone"
+          render={({ field: {onChange, onBlur, value} }) =>(
+            <View style={[styles.inputContainer, {borderWidth: errors.phone && 1, borderColor: errors.phone && '#ff375b'}]}>
+              <Icon name="phone" size={hp('3%')} color="#ccc" style={styles.inputIcon} />
+              <MaskedTextInput
+                mask="(99) 99999-9999"
+                style={styles.input}
+                placeholder="Telefone"
+                onChangeText={onChange}
+                onBlur={onBlur}
+                value={value}
+                keyboardType="numeric"
+              />
+            </View>
+          )}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="E-mail"
-          onChangeText={text => setEmail(text)}
-          value={email}
+        {errors.phone && <Text style={styles.labelError}>{errors.phone?.message}</Text>}
+
+        <Controller
+          control={control}
+          name="email"
+          render={({ field: {onChange, onBlur, value} }) =>(
+            <View style={[styles.inputContainer, {borderWidth: errors.email && 1, borderColor: errors.email && '#ff375b'}]}>
+              <Icon name="envelope" size={hp('3%')} color="#ccc" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                onChangeText={onChange}
+                onBlur={onBlur}
+                value={value}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+          )}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Confirme o e-mail"
-          //onChangeText={text => setEmail(text)}
-          //value={email}
+        {errors.email && <Text style={styles.labelError}>{errors.email?.message}</Text>}
+
+        <Controller
+          control={control}
+          name="password"
+          render={({ field: {onChange, onBlur, value} }) =>(
+            <View style={[styles.inputContainer, {borderWidth: errors.password && 1, borderColor: errors.password && '#ff375b'}]}>
+              <Icon name="lock" size={hp('3%')} color="#ccc" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Senha"
+                onChangeText={onChange}
+                onBlur={onBlur}
+                value={value}
+                secureTextEntry={true}
+                autoCapitalize="none"
+              />
+            </View>
+          )}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Senha"
-          onChangeText={text => setPassword(text)}
-          value={password}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Confirme a senha"
-          //onChangeText={text => setPassword(text)}
-          //value={password}
-        />
-        <TouchableOpacity style={styles.button} onPress={() => createUser()}>
+        {errors.password && <Text style={styles.labelError}>{errors.password?.message}</Text>}
+
+        <TouchableOpacity style={styles.button} onPress={handleSubmit(handleSignIn)}>
           <Text style={styles.buttonText}>Cadastrar</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity style={[styles.linkContainer,{marginTop:15}]} onPress={ () => navigation.navigate('SignIn')}>
+          <Text style={styles.link}>Já tenho conta cadastrada</Text>
+        </TouchableOpacity>
+
       </KeyboardAwareScrollView>
     </View>
     
@@ -113,24 +183,35 @@ const styles = StyleSheet.create({
     backgroundColor: '#3a46e4'
   },
   containerHeader:{
-    flex:1,
-    marginTop:'5%',
-    marginBottom:'5%',
-    paddingStart:'5%',
+    width: wp('100%'),
+    height: hp('30%'),
+    backgroundColor: '#3a46e4',
+    justifyContent: 'center',
+    alignItems: 'center'
   },
   containerForm: {
     backgroundColor: '#FFF',
-    height: '50%', // ou uma altura fixa em pixels
+    height: '35%',
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
     paddingStart: '5%',
     paddingEnd: '5%',
   },
   title: {
-    fontSize: 24,
-    margin: 20,
+    fontSize: 28,
     fontWeight: 'bold',
-    
+    marginBottom: 11,
+    color: '#2e3f5e',
+    marginTop: 15,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#7587a8',
+    marginBottom: 15,
+    marginLeft:15,
+    marginRight:15,
+    textAlign: 'center',
   },
   input: {
     width: '80%',
@@ -142,17 +223,49 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   button: {
-    width: '80%',
-    height: 40,
-    backgroundColor: '#3a46e4',
-    borderRadius: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
+    marginTop: hp('3%'),
+    marginHorizontal: wp('8%'),
+    paddingHorizontal: wp('25%'),
+    paddingVertical: hp('1%'),
+    borderRadius: 10,
+    backgroundColor: '#3a46e4'
   },
   buttonText: {
-    color:'#FFF',
-    fontSize:18,
+    color: '#fff',
+    fontSize: hp('2.2%'),
+    textAlign: 'center',
     fontWeight:'bold'
   },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: hp('1%'),
+    marginBottom: hp('1%'),
+    marginHorizontal: wp('8%'),
+    paddingHorizontal: wp('3%'),
+    paddingVertical: hp('1.5%'),
+    borderRadius: 10,
+    backgroundColor: '#fff'
+  },
+  inputIcon: {
+    marginRight: wp('3%')
+  },
+  input: {
+    flex: 1,
+    fontSize: hp('2.2%')
+  },
+  labelError:{
+    color: '#ff375b',
+    fontSize: hp('1.8%'),
+    marginHorizontal: wp('8%'),
+    marginBottom: hp('1%')
+  },
+  linkContainer: {
+    marginTop: hp('3%'),
+    alignItems: 'center'
+  },
+  link: {
+    color: '#a1a1a1',
+    fontSize: hp('1.58%')
+  }
 });
