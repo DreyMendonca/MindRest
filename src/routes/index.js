@@ -62,7 +62,7 @@ function TabNavigator() {
       />
 
       <Tab.Screen
-      name="Home" 
+      name="Feed" 
       component={HomeNavigation} 
       options={{
         tabBarLabel: '',
@@ -98,7 +98,7 @@ function TabNavigator() {
 
 function HomeNavigation() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="HomeScreen" component={Home} />
     </Stack.Navigator>
   );
@@ -106,7 +106,7 @@ function HomeNavigation() {
 
 function GamesNavigation() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Games" component={Games} />
     </Stack.Navigator>
   );
@@ -114,7 +114,7 @@ function GamesNavigation() {
 
 function MusicNavigation() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Music" component={Music} />
     </Stack.Navigator>
   );
@@ -122,7 +122,7 @@ function MusicNavigation() {
 
 function NotepadNavigation() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Notepad" component={Notepad} />
     </Stack.Navigator>
   );
@@ -130,7 +130,7 @@ function NotepadNavigation() {
 
 function ProfileNavigation() {
   return (
-    <Stack.Navigator>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="Profile" component={Profile} />
     </Stack.Navigator>
   );
